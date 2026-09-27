@@ -1,0 +1,12 @@
+{
+  "name": "@tessera/demo-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4"
+  }
+}

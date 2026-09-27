@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/coverage
+**/test-results
+**/playwright-report
+**/*.tsbuildinfo
+.git
+.github
+.env
+.env.*
+!.env.example
+*.log
+docs
+Makefile

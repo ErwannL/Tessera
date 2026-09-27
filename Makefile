@@ -1,5 +1,5 @@
 # Every target runs through Docker: Docker (with Compose) is the only requirement.
-.PHONY: up down logs test coverage e2e lint build
+.PHONY: up down logs test coverage e2e lint build smoke
 
 PROFILE ?=
 PROFILE_FLAG = $(if $(PROFILE),--profile $(PROFILE),)
@@ -27,3 +27,6 @@ e2e: ## Playwright against a disposable full stack
 
 build: ## Production image
 	docker build --target runtime -t tessera:latest .
+
+smoke: build ## Production image: non-root, migrations, /health
+	sh scripts/smoke.sh

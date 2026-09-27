@@ -21,6 +21,7 @@
     "lint": "sh scripts/in-docker.sh npm run lint:all",
     "e2e": "sh scripts/e2e.sh",
     "build": "docker build --target runtime -t tessera:latest .",
+    "smoke": "npm run build && sh scripts/smoke.sh",
     "test:all": "npm run test -w backend && npm run test -w frontend",
     "coverage:all": "npm run coverage -w backend && npm run coverage -w frontend",
     "lint:all": "eslint . --max-warnings=0 && prettier --check . && npm run typecheck --workspaces --if-present"

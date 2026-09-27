@@ -1,0 +1,50 @@
+# Example production deployment. Put Tessera behind a TLS reverse proxy.
+# Every secret is required: `docker compose -f docker-compose.prod.yml up -d` fails if one is missing.
+name: tessera-prod
+
+x-tessera-env: &tessera-env
+  NODE_ENV: production
+  PORT: '3000'
+  DATABASE_URL: postgres://tessera:${POSTGRES_PASSWORD:?}@postgres:5432/tessera
+  API_KEYS: ${API_KEYS:?}
+  CODE_HMAC_KEY: ${CODE_HMAC_KEY:?}
+  HANDOFF_SECRET: ${HANDOFF_SECRET:?}
+  SESSION_SECRET: ${SESSION_SECRET:?}
+  PUBLIC_URL: ${PUBLIC_URL:?}
+  TRUST_PROXY: ${TRUST_PROXY:?}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tessera
+      POSTGRES_DB: tessera
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U tessera -d tessera']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    image: ${TESSERA_IMAGE:-tessera:latest}
+    command: ['migrate']
+    environment: *tessera-env
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  tessera:
+    image: ${TESSERA_IMAGE:-tessera:latest}
+    restart: unless-stopped
+    environment: *tessera-env
+    ports:
+      - '127.0.0.1:3000:3000'
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+volumes:
+  pgdata:

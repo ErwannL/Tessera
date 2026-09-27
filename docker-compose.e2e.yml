@@ -1,0 +1,66 @@
+# Disposable end-to-end stack used by `make e2e` (scripts/e2e.sh generates the secrets).
+# The demo App and Playwright share Tessera's network namespace so the browser sees
+# http://localhost:3000 (dashboard) and http://localhost:4000 (demo App), like a developer.
+name: tessera-e2e
+
+x-tessera-env: &tessera-env
+  NODE_ENV: production
+  PORT: '3000'
+  DATABASE_URL: postgres://postgres@postgres:5432/postgres
+  API_KEYS: ${E2E_API_KEY:?}
+  CODE_HMAC_KEY: ${E2E_CODE_HMAC_KEY:?}
+  HANDOFF_SECRET: ${E2E_HANDOFF_SECRET:?}
+  SESSION_SECRET: ${E2E_SESSION_SECRET:?}
+  PUBLIC_URL: http://localhost:3000
+  TRUST_PROXY: 'false'
+  MIN_EXPIRES_IN_SECONDS: '5'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 1s
+      timeout: 3s
+      retries: 60
+
+  migrate:
+    image: tessera:e2e
+    build: { context: ., target: runtime }
+    command: ['migrate']
+    environment: *tessera-env
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  tessera:
+    image: tessera:e2e
+    environment: *tessera-env
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  demo:
+    image: node:22-slim
+    working_dir: /demo
+    command: ['node', 'server.ts']
+    network_mode: service:tessera
+    environment:
+      PORT: '4000'
+      TESSERA_API_URL: http://localhost:3000
+      TESSERA_PUBLIC_URL: http://localhost:3000
+      TESSERA_API_KEY: ${E2E_API_KEY:?}
+      TESSERA_HANDOFF_SECRET: ${E2E_HANDOFF_SECRET:?}
+    volumes:
+      - ./examples/demo-app:/demo:ro
+    depends_on:
+      tessera: { condition: service_healthy }
+
+  playwright:
+    build: { context: ., dockerfile: e2e/Dockerfile }
+    image: tessera-e2e-runner:latest
+    network_mode: service:tessera
+    depends_on:
+      demo: { condition: service_started }

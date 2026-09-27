@@ -1,0 +1,24 @@
+# Disposable test stack used by `make test`, `make coverage` and `make lint`.
+# PostgreSQL lives in tmpfs, is not published, and everything is removed with `down -v`.
+name: tessera-test
+
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 1s
+      timeout: 3s
+      retries: 60
+
+  tools:
+    build: { context: ., target: dev }
+    image: tessera-dev:latest
+    environment:
+      TEST_DATABASE_URL: postgres://postgres@postgres-test:5432/postgres
+    depends_on:
+      postgres-test: { condition: service_healthy }

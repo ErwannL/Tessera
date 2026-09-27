@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/brand/logo-animated.svg" width="120" alt="Logo Tessera : deux moitiés qui s'emboîtent"></p>
+
 # TESSERA
 
 > Une action nécessite l'accord de quelqu'un d'autre ? Demandez-lui sa tessera.

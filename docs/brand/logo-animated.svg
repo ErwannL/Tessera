@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="256" height="256" role="img" aria-label="Tessera">
+  <style>
+    .l { fill: #4338ca; animation: left 4s cubic-bezier(.6,0,.2,1) infinite; }
+    .r { fill: #0369a1; animation: right 4s cubic-bezier(.6,0,.2,1) infinite; }
+    .spark { fill: #f59e0b; opacity: 0; transform-origin: 20.5px 24px; animation: spark 4s ease-out infinite; }
+    @keyframes left  { 0%, 15% { transform: translateX(-5px) rotate(-6deg); } 45%, 85% { transform: none; } 100% { transform: translateX(-5px) rotate(-6deg); } }
+    @keyframes right { 0%, 15% { transform: translateX(5px) rotate(6deg); }  45%, 85% { transform: none; } 100% { transform: translateX(5px) rotate(6deg); } }
+    @keyframes spark { 0%, 44% { opacity: 0; transform: scale(.2); } 50% { opacity: 1; transform: scale(1); } 65%, 100% { opacity: 0; transform: scale(1.8); } }
+    .l, .r { transform-box: fill-box; transform-origin: center; }
+    @media (prefers-color-scheme: dark) { .l { fill: #a5b4fc; } .r { fill: #7dd3fc; } }
+    @media (prefers-reduced-motion: reduce) { .l, .r, .spark { animation: none; } }
+  </style>
+  <path class="l" d="M6 8h16v10l-5 6 5 6v10H6z"/>
+  <path class="r" d="M42 8H25v10l-5 6 5 6v10h17z"/>
+  <circle class="spark" cx="20.5" cy="24" r="2.5"/>
+</svg>

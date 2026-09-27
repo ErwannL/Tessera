@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="256" height="256" role="img" aria-label="Tessera">
+  <style>
+    .l { fill: #4338ca; } .r { fill: #0369a1; }
+    @media (prefers-color-scheme: dark) { .l { fill: #a5b4fc; } .r { fill: #7dd3fc; } }
+  </style>
+  <path class="l" d="M6 8h16v10l-5 6 5 6v10H6z"/>
+  <path class="r" d="M42 8H25v10l-5 6 5 6v10h17z"/>
+</svg>

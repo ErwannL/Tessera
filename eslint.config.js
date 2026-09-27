@@ -30,7 +30,13 @@ export default tseslint.config(
           message: 'No focused, skipped or todo tests.',
         },
       ],
-      'no-warning-comments': ['error', { terms: ['todo', 'fixme', 'xxx'], location: 'anywhere' }],
+      'no-warning-comments': [
+        'error',
+        {
+          terms: ['todo', 'fixme', 'xxx', 'istanbul', 'c8 ignore', 'v8 ignore'],
+          location: 'anywhere',
+        },
+      ],
       'max-lines': ['error', { max: 400 }],
       // Fastify hooks and handlers are async by convention, even when they only throw.
       '@typescript-eslint/require-await': 'off',

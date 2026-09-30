@@ -32,8 +32,12 @@ export function dashboardRoutes(app: FastifyInstance, options: DashboardRoutesOp
     path: '/',
   } as const;
 
-  // Public: lets the page know where « Back to Orqea » leads.
-  app.get('/config', async () => ({ orqeaUrl: config.TESSERA_ORQEA_URL }));
+  // Public: lets the page know where « Back to Orqea » leads: the Orqea origin that opened
+  // the dashboard (signed claim kept in the session), else this environment's TESSERA_ORQEA_URL.
+  app.get('/config', async (request) => {
+    const session = await sessions.readSession(request.cookies[SESSION_COOKIE]);
+    return { orqeaUrl: session?.orqeaOrigin ?? config.TESSERA_ORQEA_URL };
+  });
 
   // CSRF: besides SameSite=Strict, state-changing calls must come from our own origin.
   const checkOrigin = async (request: FastifyRequest): Promise<void> => {
@@ -41,9 +45,9 @@ export function dashboardRoutes(app: FastifyInstance, options: DashboardRoutesOp
   };
 
   const currentUser = async (request: FastifyRequest): Promise<SessionUser> => {
-    const user = await sessions.readSession(request.cookies[SESSION_COOKIE]);
-    if (user === null) throw new DomainError('UNAUTHORIZED');
-    return user;
+    const session = await sessions.readSession(request.cookies[SESSION_COOKIE]);
+    if (session === null) throw new DomainError('UNAUTHORIZED');
+    return session.user;
   };
 
   const handoffLimit = limitHook(app, [
@@ -65,7 +69,7 @@ export function dashboardRoutes(app: FastifyInstance, options: DashboardRoutesOp
       .returning('jti')
       .executeTakeFirst();
     if (inserted === undefined) throw new DomainError('INVALID_HANDOFF');
-    const session = await sessions.issueSession(handoff.user);
+    const session = await sessions.issueSession(handoff.user, handoff.orqeaOrigin);
     return reply
       .setCookie(SESSION_COOKIE, session, { ...cookieOptions, maxAge: config.SESSION_TTL_SECONDS })
       .send(handoff.user);

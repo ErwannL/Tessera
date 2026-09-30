@@ -14,6 +14,7 @@ const handoffClaims = z
     sub: z.string().min(1).max(128),
     name: z.string().min(1).max(200),
     jti: z.string().min(16).max(128),
+    orq: z.string().max(2048).optional(),
     iat: z.int(),
     exp: z.int(),
   })
@@ -23,12 +24,30 @@ const handoffClaims = z
     'handoff tokens live 60 seconds at most',
   );
 
-const sessionClaims = z.object({ sub: z.string(), name: z.string() });
+const sessionClaims = z.object({
+  sub: z.string(),
+  name: z.string(),
+  orq: z.string().optional(),
+});
+
+/** A bare http(s) origin, or null: the `orq` claim is signed by Orqea but still checked. */
+export function orqeaOriginOf(value: string | undefined): string | null {
+  if (value === undefined || !URL.canParse(value)) return null;
+  const url = new URL(value);
+  return url.protocol === 'http:' || url.protocol === 'https:' ? url.origin : null;
+}
 
 export interface VerifiedHandoff {
   user: SessionUser;
   jti: string;
   expiresAt: Date;
+  /** Origin of the Orqea that opened the dashboard (signed `orq` claim), if valid. */
+  orqeaOrigin: string | null;
+}
+
+export interface SessionInfo {
+  user: SessionUser;
+  orqeaOrigin: string | null;
 }
 
 export interface SessionToolsOptions {
@@ -57,15 +76,18 @@ export function createSessionTools(options: SessionToolsOptions) {
         user: { id: claims.sub, name: claims.name },
         jti: claims.jti,
         expiresAt: new Date(claims.exp * 1000),
+        orqeaOrigin: orqeaOriginOf(claims.orq),
       };
     } catch {
       throw new DomainError('INVALID_HANDOFF');
     }
   }
 
-  async function issueSession(user: SessionUser): Promise<string> {
+  async function issueSession(user: SessionUser, orqeaOrigin: string | null): Promise<string> {
     const issuedAt = Math.floor(options.clock().getTime() / 1000);
-    return new SignJWT({ name: user.name })
+    return new SignJWT(
+      orqeaOrigin === null ? { name: user.name } : { name: user.name, orq: orqeaOrigin },
+    )
       .setProtectedHeader({ alg: 'HS256' })
       .setSubject(user.id)
       .setAudience(SESSION_AUDIENCE)
@@ -74,7 +96,7 @@ export function createSessionTools(options: SessionToolsOptions) {
       .sign(sessionKey);
   }
 
-  async function readSession(token: string | undefined): Promise<SessionUser | null> {
+  async function readSession(token: string | undefined): Promise<SessionInfo | null> {
     try {
       const { payload } = await jwtVerify(token ?? '', sessionKey, {
         algorithms: ['HS256'],
@@ -83,7 +105,10 @@ export function createSessionTools(options: SessionToolsOptions) {
         currentDate: options.clock(),
       });
       const claims = sessionClaims.parse(payload);
-      return { id: claims.sub, name: claims.name };
+      return {
+        user: { id: claims.sub, name: claims.name },
+        orqeaOrigin: orqeaOriginOf(claims.orq),
+      };
     } catch {
       return null;
     }

@@ -11,6 +11,8 @@ export interface HandoffOptions {
   lifetime?: number;
   issuedAtOffset?: number;
   omit?: 'name';
+  /** Signed `orq` claim: the Orqea origin that opened the dashboard. */
+  orq?: string;
 }
 
 /** Signs a handoff token the way an App server would. */
@@ -19,7 +21,9 @@ export async function signHandoff(
   options: HandoffOptions = {},
 ): Promise<string> {
   const iat = Math.floor(context.clock.now().getTime() / 1000) + (options.issuedAtOffset ?? 0);
-  const claims = options.omit === 'name' ? {} : { name: options.name ?? 'Alice Martin' };
+  const claims: Record<string, string> =
+    options.omit === 'name' ? {} : { name: options.name ?? 'Alice Martin' };
+  if (options.orq !== undefined) claims.orq = options.orq;
   return new SignJWT(claims)
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(options.sub ?? '42')

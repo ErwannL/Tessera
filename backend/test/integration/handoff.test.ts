@@ -138,3 +138,36 @@ describe('rate limit', () => {
     await limited.close();
   });
 });
+
+describe('GET /api/v1/dashboard/config: where « Back to Orqea » leads', () => {
+  const orqeaUrl = async (cookie?: string) => {
+    const response = await context.app.inject({
+      method: 'GET',
+      url: '/api/v1/dashboard/config',
+      headers: cookie === undefined ? {} : { cookie },
+    });
+    const body: { orqeaUrl: string } = response.json();
+    return body.orqeaUrl;
+  };
+  const sessionFor = async (orq?: string) => {
+    const response = await postHandoff(context, await signHandoff(context, { orq }));
+    const cookie = response.cookies[0]!;
+    return `tessera_session=${cookie.value}`;
+  };
+
+  it('serves the Orqea origin that opened Tessera, kept in the session', async () => {
+    expect(await orqeaUrl(await sessionFor('http://localhost:3002'))).toBe('http://localhost:3002');
+    expect(await orqeaUrl(await sessionFor('https://orqea.dev/some/path?x=1'))).toBe(
+      'https://orqea.dev',
+    );
+  });
+
+  it('falls back to TESSERA_ORQEA_URL without a claim, with a bad one, or without a session', async () => {
+    const fallback = context.config.TESSERA_ORQEA_URL;
+    expect(await orqeaUrl(await sessionFor())).toBe(fallback);
+    expect(await orqeaUrl(await sessionFor('javascript:alert(1)'))).toBe(fallback);
+    expect(await orqeaUrl(await sessionFor('not a url'))).toBe(fallback);
+    expect(await orqeaUrl()).toBe(fallback);
+    expect(await orqeaUrl('tessera_session=garbage')).toBe(fallback);
+  });
+});

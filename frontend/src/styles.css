@@ -98,6 +98,42 @@ h3 {
   align-items: center;
 }
 
+.brand-logo {
+  display: flex;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand-credits {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 2px 0 0;
+  line-height: 1.25;
+}
+
+.credit-owner,
+.credit-author {
+  color: var(--muted);
+  text-decoration: none;
+  width: fit-content;
+}
+
+.credit-owner {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: inherit;
+}
+
+.credit-author {
+  font-size: 0.75rem;
+}
+
+.credit-owner:hover,
+.credit-author:hover {
+  text-decoration: underline;
+}
+
 .brand h1 {
   margin: 0;
   font-size: 1.5rem;
@@ -131,10 +167,6 @@ h3 {
   color: var(--muted);
 }
 
-.credits {
-  font-size: 0.85rem;
-}
-
 .logo-left,
 .logo-right {
   transform-box: fill-box;
@@ -144,12 +176,12 @@ h3 {
 /* Still at rest; the two halves come apart and fit together on hover / keyboard focus. */
 @media (prefers-reduced-motion: no-preference) {
   .brand:hover .logo-left,
-  .brand:focus-visible .logo-left {
+  .brand:focus-within .logo-left {
     animation: logo-left 1.6s cubic-bezier(0.6, 0, 0.2, 1) infinite;
   }
 
   .brand:hover .logo-right,
-  .brand:focus-visible .logo-right {
+  .brand:focus-within .logo-right {
     animation: logo-right 1.6s cubic-bezier(0.6, 0, 0.2, 1) infinite;
   }
 }

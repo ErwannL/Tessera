@@ -69,17 +69,45 @@ export function App({ api, handoffToken, framed = false }: AppProps) {
   return (
     <div className="app">
       <header className="header">
-        {/* « Tessera par Orqea » leads to THIS environment's Orqea (TESSERA_ORQEA_URL),
-            in the top window: from inside the console's iframe it must leave the frame. */}
-        <a className="brand" href={orqeaUrl ?? '/'} target={orqeaUrl === null ? undefined : '_top'}>
-          <Logo />
+        {/* The block: logo + name « par Orqea », then two credit lines under the name. The logo
+            animates on hover and keyboard focus of the whole block (.brand, focus-within).
+            « Propulsé par Orqea » leads to the Orqea that OPENED Tessera (signed claim, else
+            TESSERA_ORQEA_URL), in the top window: from inside the console's iframe it must
+            leave the frame. The logo link only duplicates it for the pointer. */}
+        <div className="brand">
+          <a
+            className="brand-logo"
+            href={orqeaUrl ?? '/'}
+            target={orqeaUrl === null ? undefined : '_top'}
+            tabIndex={-1}
+            aria-hidden="true"
+          >
+            <Logo />
+          </a>
           <div>
             <h1>
               {t('app.name')} <span className="byline">{t('app.byline')}</span>
             </h1>
+            <p className="brand-credits">
+              <a
+                className="credit-owner"
+                href={orqeaUrl ?? '/'}
+                target={orqeaUrl === null ? undefined : '_top'}
+              >
+                {t('app.poweredBy')}
+              </a>
+              <a
+                className="credit-author"
+                href={AUTHOR_URL}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                {t('app.author')}
+              </a>
+            </p>
             <p className="tagline">{t('app.tagline')}</p>
           </div>
-        </a>
+        </div>
         <div className="user">
           {view.kind === 'ready' && <span>{t('app.signedInAs', { name: view.me.name })}</span>}
           {!framed && orqeaUrl !== null && (
@@ -107,11 +135,6 @@ export function App({ api, handoffToken, framed = false }: AppProps) {
       <footer className="footer">
         <h2>{t('about.title')}</h2>
         <p>{t('about.body')}</p>
-        <p className="credits">
-          <a href={AUTHOR_URL} target="_blank" rel="noreferrer noopener">
-            {t('app.author')}
-          </a>
-        </p>
       </footer>
     </div>
   );

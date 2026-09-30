@@ -151,6 +151,12 @@ de la barre d'adresse dès son chargement.
 Claims obligatoires : `sub` (identifiant de l'utilisateur dans l'App), `name`, `jti` (aléatoire,
 16 caractères au moins), `iat`, `exp` (`exp - iat` ≤ 60), `aud: "tessera-dashboard"`.
 
+Claim facultatif `orq` : l'**origine** (schéma + hôte + port) de l'application qui ouvre Tessera.
+Tessera la range dans sa session et en fait la cible de « Propulsé par Orqea » et « Revenir sur
+Orqea » (`GET /api/v1/dashboard/config`) ; absente ou invalide, le repli est `TESSERA_ORQEA_URL`.
+C'est VOTRE serveur qui décide de la mettre : il ne doit la tirer que d'une liste blanche
+(jamais de l'en-tête `Origin` brut), sinon c'est une redirection ouverte signée.
+
 ## Exemple Node.js complet
 
 Ce script (Node 22, aucune dépendance) déroule tout le parcours contre la pile locale. Enregistrez-le

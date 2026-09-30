@@ -7,6 +7,7 @@ export const en: Messages = {
     loading: 'Loading…',
     backToOrqea: 'Back to Orqea',
     byline: 'by Orqea',
+    poweredBy: 'Powered by Orqea',
     author: 'Developed by Erwann Laplante',
     signedInAs: 'Signed in as {{name}}',
     retry: 'Retry',

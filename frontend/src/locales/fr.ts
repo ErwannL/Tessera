@@ -5,6 +5,7 @@ export const fr = {
     loading: 'Chargement…',
     backToOrqea: 'Revenir sur Orqea',
     byline: 'par Orqea',
+    poweredBy: 'Propulsé par Orqea',
     author: 'Développé par Erwann Laplante',
     signedInAs: 'Connecté en tant que {{name}}',
     retry: 'Réessayer',

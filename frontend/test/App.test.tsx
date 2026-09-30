@@ -59,10 +59,14 @@ describe('App', () => {
       'target',
       '_top',
     );
-    // « TESSERA par Orqea » leads to the environment's Orqea, in the top window.
-    const brand = screen.getByRole('heading', { name: 'TESSERA par Orqea' }).closest('a');
-    expect(brand).toHaveAttribute('href', 'https://orqea.example/app');
-    expect(brand).toHaveAttribute('target', '_top');
+    // « Propulsé par Orqea » leads to the Orqea that opened Tessera, in the top window,
+    // and sits UNDER the name, before the author line.
+    const owner = screen.getByRole('link', { name: 'Propulsé par Orqea' });
+    expect(owner).toHaveAttribute('href', 'https://orqea.example/app');
+    expect(owner).toHaveAttribute('target', '_top');
+    const heading = screen.getByRole('heading', { name: 'TESSERA par Orqea' });
+    expect(heading.compareDocumentPosition(owner) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getAllByRole('link', { name: /Développé par/ })).toHaveLength(1);
     const author = screen.getByRole('link', { name: 'Développé par Erwann Laplante' });
     expect(author).toHaveAttribute('href', 'https://github.com/ErwannL');
     expect(author).toHaveAttribute('target', '_blank');
@@ -75,12 +79,11 @@ describe('App', () => {
     await renderWithI18n(<App api={api} handoffToken={null} framed />);
     await screen.findByText('Connecté en tant que Alice Martin');
     expect(screen.queryByRole('link', { name: 'Revenir sur Orqea' })).toBeNull();
-    const brand = await waitFor(() => {
-      const link = screen.getByRole('heading', { name: 'TESSERA par Orqea' }).closest('a');
-      expect(link).toHaveAttribute('href', 'https://orqea.example/app');
-      return link;
+    const owner = screen.getByRole('link', { name: 'Propulsé par Orqea' });
+    await waitFor(() => {
+      expect(owner).toHaveAttribute('href', 'https://orqea.example/app');
     });
-    expect(brand).toHaveAttribute('target', '_top');
+    expect(owner).toHaveAttribute('target', '_top');
   });
 
   it('keeps working when the Orqea URL cannot be read', async () => {
@@ -88,9 +91,9 @@ describe('App', () => {
     await renderWithI18n(<App api={api} handoffToken={null} />);
     await screen.findByText('Connecté en tant que Alice Martin');
     expect(screen.queryByRole('link', { name: 'Revenir sur Orqea' })).toBeNull();
-    const brand = screen.getByRole('heading', { name: 'TESSERA par Orqea' }).closest('a');
-    expect(brand).toHaveAttribute('href', '/');
-    expect(brand).not.toHaveAttribute('target');
+    const owner = screen.getByRole('link', { name: 'Propulsé par Orqea' });
+    expect(owner).toHaveAttribute('href', '/');
+    expect(owner).not.toHaveAttribute('target');
   });
 
   it('shows the single message when nothing concerns the user', async () => {

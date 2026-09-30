@@ -30,7 +30,7 @@ tous les environnements : 32 caractères au moins, et tous différents les uns d
   `frame-ancestors`), séparées par des espaces, par exemple `https://console.orqea.dev http://localhost:3002`.
   Vide ou absente : `'none'`. Origines `http(s)` nues seulement (pas de joker, de chemin ni d'autre schéma :
   démarrage refusé). Ne concerne que les pages du tableau de bord, jamais l'API.
-- `TESSERA_ORQEA_URL` : cible du lien « Revenir sur Orqea » (`https://orqea.dev` par défaut) ; masqué dans un `<iframe>`.
+- `TESSERA_ORQEA_URL` : Orqea DE L'ENVIRONNEMENT (`https://orqea.dev` par défaut ; l'hôte pose la console locale, comme `SPORTSPLITTER_ORQEA_URL`), cible de « TESSERA par Orqea » et de « Revenir sur Orqea » (`target="_top"`, donc hors iframe) ; le bouton est masqué dans un `<iframe>`, la mention reste. « Développé par … » ouvre GitHub dans un nouvel onglet (`rel="noreferrer noopener"`).
 
 | Variable                        | Défaut    | Bornes           | Rôle                                                         |
 | ------------------------------- | --------- | ---------------- | ------------------------------------------------------------ |

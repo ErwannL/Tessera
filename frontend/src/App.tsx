@@ -58,19 +58,20 @@ export function App({ api, handoffToken, framed = false }: AppProps) {
 
   const [orqeaUrl, setOrqeaUrl] = useState<string | null>(null);
   useEffect(() => {
-    if (framed) return;
     void api.config().then(
       (config) => {
         setOrqeaUrl(config.orqeaUrl);
       },
       () => undefined,
     );
-  }, [api, framed]);
+  }, [api]);
 
   return (
     <div className="app">
       <header className="header">
-        <a className="brand" href="/">
+        {/* « Tessera par Orqea » leads to THIS environment's Orqea (TESSERA_ORQEA_URL),
+            in the top window: from inside the console's iframe it must leave the frame. */}
+        <a className="brand" href={orqeaUrl ?? '/'} target={orqeaUrl === null ? undefined : '_top'}>
           <Logo />
           <div>
             <h1>
@@ -82,7 +83,7 @@ export function App({ api, handoffToken, framed = false }: AppProps) {
         <div className="user">
           {view.kind === 'ready' && <span>{t('app.signedInAs', { name: view.me.name })}</span>}
           {!framed && orqeaUrl !== null && (
-            <a className="button" href={orqeaUrl}>
+            <a className="button" href={orqeaUrl} target="_top">
               {t('app.backToOrqea')}
             </a>
           )}

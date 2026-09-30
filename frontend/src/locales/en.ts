@@ -7,7 +7,7 @@ export const en: Messages = {
     loading: 'Loading…',
     backToOrqea: 'Back to Orqea',
     byline: 'by Orqea',
-    author: 'Developed by Erwann Laplante (new tab)',
+    author: 'Developed by Erwann Laplante',
     signedInAs: 'Signed in as {{name}}',
     retry: 'Retry',
     error: 'Something went wrong. Please try again in a moment.',

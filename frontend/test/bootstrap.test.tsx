@@ -39,17 +39,17 @@ describe('mount', () => {
 
   it('tells the app when the page is framed', async () => {
     document.body.innerHTML = '<div id="root"></div>';
-    const seen: string[] = [];
     const fetchImpl = vi.fn((input: string) => {
-      seen.push(input);
-      const body = { id: '1', name: 'A', hasRequested: false, hasToApprove: false };
+      const body = input.endsWith('/config')
+        ? { orqeaUrl: 'https://orqea.example' }
+        : { id: '1', name: 'A', hasRequested: false, hasToApprove: false };
       return Promise.resolve(new Response(JSON.stringify(body), { status: 200 }));
     });
     const top = vi.spyOn(window, 'top', 'get').mockReturnValue(null);
     await mount(environment(fetchImpl as unknown as typeof fetch, ['fr']));
     await screen.findByText('Aucune demande ne vous concerne');
     top.mockRestore();
-    expect(seen).not.toContain('/api/v1/dashboard/config');
+    expect(screen.queryByRole('link', { name: 'Revenir sur Orqea' })).toBeNull();
   });
 
   it('requires a #root element', async () => {

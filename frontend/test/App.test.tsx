@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../src/api';
 import { App } from '../src/App';
@@ -55,18 +55,32 @@ describe('App', () => {
       'href',
       'https://orqea.example/app',
     );
-    expect(screen.getByRole('heading', { name: 'TESSERA par Orqea' })).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: 'Développé par Erwann Laplante (nouvel onglet)' }),
-    ).toHaveAttribute('href', 'https://github.com/ErwannL');
+    expect(screen.getByRole('link', { name: 'Revenir sur Orqea' })).toHaveAttribute(
+      'target',
+      '_top',
+    );
+    // « TESSERA par Orqea » leads to the environment's Orqea, in the top window.
+    const brand = screen.getByRole('heading', { name: 'TESSERA par Orqea' }).closest('a');
+    expect(brand).toHaveAttribute('href', 'https://orqea.example/app');
+    expect(brand).toHaveAttribute('target', '_top');
+    const author = screen.getByRole('link', { name: 'Développé par Erwann Laplante' });
+    expect(author).toHaveAttribute('href', 'https://github.com/ErwannL');
+    expect(author).toHaveAttribute('target', '_blank');
+    expect(author).toHaveAttribute('rel', 'noreferrer noopener');
+    expect(document.body.textContent).not.toMatch(/nouvel onglet|new tab/i);
   });
 
-  it('hides « Back to Orqea » inside an iframe, and does not even ask for it', async () => {
+  it('hides « Back to Orqea » inside an iframe, but the byline still leaves the frame', async () => {
     const api = fakeApi();
     await renderWithI18n(<App api={api} handoffToken={null} framed />);
     await screen.findByText('Connecté en tant que Alice Martin');
     expect(screen.queryByRole('link', { name: 'Revenir sur Orqea' })).toBeNull();
-    expect(api.config).not.toHaveBeenCalled();
+    const brand = await waitFor(() => {
+      const link = screen.getByRole('heading', { name: 'TESSERA par Orqea' }).closest('a');
+      expect(link).toHaveAttribute('href', 'https://orqea.example/app');
+      return link;
+    });
+    expect(brand).toHaveAttribute('target', '_top');
   });
 
   it('keeps working when the Orqea URL cannot be read', async () => {
@@ -74,6 +88,9 @@ describe('App', () => {
     await renderWithI18n(<App api={api} handoffToken={null} />);
     await screen.findByText('Connecté en tant que Alice Martin');
     expect(screen.queryByRole('link', { name: 'Revenir sur Orqea' })).toBeNull();
+    const brand = screen.getByRole('heading', { name: 'TESSERA par Orqea' }).closest('a');
+    expect(brand).toHaveAttribute('href', '/');
+    expect(brand).not.toHaveAttribute('target');
   });
 
   it('shows the single message when nothing concerns the user', async () => {

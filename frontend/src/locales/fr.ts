@@ -5,7 +5,7 @@ export const fr = {
     loading: 'Chargement…',
     backToOrqea: 'Revenir sur Orqea',
     byline: 'par Orqea',
-    author: 'Développé par Erwann Laplante (nouvel onglet)',
+    author: 'Développé par Erwann Laplante',
     signedInAs: 'Connecté en tant que {{name}}',
     retry: 'Réessayer',
     error: 'Une erreur est survenue. Réessayez dans un instant.',

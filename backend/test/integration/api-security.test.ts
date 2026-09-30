@@ -1,4 +1,8 @@
 import type { InjectOptions } from 'fastify';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { ConfigError, loadConfig } from '../../src/config.js';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   api,
@@ -7,7 +11,7 @@ import {
   requestBody,
   type TestContext,
 } from '../helpers/app.js';
-import { randomSecret } from '../helpers/env.js';
+import { baseEnv, randomSecret } from '../helpers/env.js';
 
 let context: TestContext;
 
@@ -168,6 +172,67 @@ describe('security headers', () => {
     const response = await production.app.inject({ method: 'GET', url: '/livez' });
     expect(response.headers['strict-transport-security']).toContain('max-age=31536000');
     await production.close();
+  });
+});
+
+describe('embedding the dashboard (EMBED_ORIGINS)', () => {
+  const frameAncestors = (csp: unknown) => /frame-ancestors ([^;]*)/.exec(String(csp))?.[1];
+
+  async function withEmbed(origins: string | undefined, run: (app: TestContext) => Promise<void>) {
+    const dir = await mkdtemp(join(tmpdir(), 'tessera-front-'));
+    await writeFile(join(dir, 'index.html'), '<!doctype html><title>t</title>');
+    const embedded = await createTestApp({
+      env: { EMBED_ORIGINS: origins },
+      database: context.database,
+      frontendDir: dir,
+    });
+    try {
+      await run(embedded);
+    } finally {
+      await embedded.close();
+      await rm(dir, { recursive: true });
+    }
+  }
+
+  it("defaults to 'none' on the dashboard pages, with X-Frame-Options kept", async () => {
+    await withEmbed(undefined, async ({ app }) => {
+      const page = await app.inject({ method: 'GET', url: '/' });
+      expect(frameAncestors(page.headers['content-security-policy'])).toBe("'none'");
+      expect(page.headers['x-frame-options']).toBeDefined();
+    });
+  });
+
+  it('lists the configured origins on the dashboard pages only', async () => {
+    await withEmbed('http://localhost:3002  https://console.orqea.dev', async ({ app }) => {
+      const page = await app.inject({ method: 'GET', url: '/' });
+      expect(frameAncestors(page.headers['content-security-policy'])).toBe(
+        'http://localhost:3002 https://console.orqea.dev',
+      );
+      expect(page.headers['x-frame-options']).toBeUndefined();
+      for (const url of ['/api/v1/openapi.json', '/api/v1/dashboard/config', '/livez', '/health']) {
+        const response = await app.inject({ method: 'GET', url: `${url}?x=1` });
+        expect(frameAncestors(response.headers['content-security-policy'])).toBe("'none'");
+        expect(response.headers['x-frame-options']).toBeDefined();
+      }
+    });
+  });
+
+  it.each([
+    '*',
+    'https://*.orqea.dev',
+    'ftp://orqea.dev',
+    'javascript:alert(1)',
+    'https://a.dev/x',
+    'orqea.dev',
+    "'self'",
+    'data:',
+  ])('refuses %s at startup', (value) => {
+    expect(() => loadConfig(baseEnv({ EMBED_ORIGINS: value }))).toThrow(ConfigError);
+  });
+
+  it('serves the Orqea return URL publicly', async () => {
+    const response = await inject({ method: 'GET', url: '/api/v1/dashboard/config' });
+    expect(response.json()).toEqual({ orqeaUrl: 'https://orqea.dev' });
   });
 });
 

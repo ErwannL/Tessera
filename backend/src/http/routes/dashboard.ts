@@ -20,12 +20,20 @@ export interface DashboardRoutesOptions {
 /** Dashboard API: session cookie only (never the API key), read-only except handoff/logout. */
 export function dashboardRoutes(app: FastifyInstance, options: DashboardRoutesOptions): void {
   const { config, db, service, sessions, clock } = options;
+  // Framed by another site (EMBED_ORIGINS), a Strict cookie is never sent: the session is
+  // then SameSite=None, Secure and partitioned (per top-level site). The Origin check above
+  // still closes CSRF.
+  const embedded = config.EMBED_ORIGINS.length > 0;
   const cookieOptions = {
     httpOnly: true,
-    secure: config.NODE_ENV !== 'development',
-    sameSite: 'strict',
+    secure: embedded || config.NODE_ENV !== 'development',
+    sameSite: embedded ? 'none' : 'strict',
+    ...(embedded ? { partitioned: true } : {}),
     path: '/',
   } as const;
+
+  // Public: lets the page know where « Back to Orqea » leads.
+  app.get('/config', async () => ({ orqeaUrl: config.TESSERA_ORQEA_URL }));
 
   // CSRF: besides SameSite=Strict, state-changing calls must come from our own origin.
   const checkOrigin = async (request: FastifyRequest): Promise<void> => {

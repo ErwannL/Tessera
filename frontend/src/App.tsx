@@ -12,10 +12,14 @@ type View =
   | { kind: 'error' }
   | { kind: 'ready'; me: Me };
 
+const AUTHOR_URL = 'https://github.com/ErwannL';
+
 export interface AppProps {
   api: Api;
   /** Handoff token read (and erased) from the URL fragment before rendering, if any. */
   handoffToken: string | null;
+  /** True when the page runs inside an <iframe> (the Orqea console): no « Back to Orqea ». */
+  framed?: boolean;
 }
 
 async function resolveView(api: Api, token: string | null): Promise<View> {
@@ -44,7 +48,7 @@ function Message({ title, body }: { title: string; body: string }) {
   );
 }
 
-export function App({ api, handoffToken }: AppProps) {
+export function App({ api, handoffToken, framed = false }: AppProps) {
   const { t } = useTranslation();
   const [view, setView] = useState<View>({ kind: 'loading' });
 
@@ -52,31 +56,37 @@ export function App({ api, handoffToken }: AppProps) {
     void resolveView(api, handoffToken).then(setView);
   }, [api, handoffToken]);
 
-  const logout = () => {
-    const signedOut = () => {
-      setView({ kind: 'noSession' });
-    };
-    api.logout().then(signedOut, signedOut);
-  };
+  const [orqeaUrl, setOrqeaUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (framed) return;
+    void api.config().then(
+      (config) => {
+        setOrqeaUrl(config.orqeaUrl);
+      },
+      () => undefined,
+    );
+  }, [api, framed]);
 
   return (
     <div className="app">
       <header className="header">
-        <div className="brand">
+        <a className="brand" href="/">
           <Logo />
           <div>
-            <h1>{t('app.name')}</h1>
+            <h1>
+              {t('app.name')} <span className="byline">{t('app.byline')}</span>
+            </h1>
             <p className="tagline">{t('app.tagline')}</p>
           </div>
+        </a>
+        <div className="user">
+          {view.kind === 'ready' && <span>{t('app.signedInAs', { name: view.me.name })}</span>}
+          {!framed && orqeaUrl !== null && (
+            <a className="button" href={orqeaUrl}>
+              {t('app.backToOrqea')}
+            </a>
+          )}
         </div>
-        {view.kind === 'ready' && (
-          <div className="user">
-            <span>{t('app.signedInAs', { name: view.me.name })}</span>
-            <button type="button" className="button" onClick={logout}>
-              {t('app.logout')}
-            </button>
-          </div>
-        )}
       </header>
       <main className="main">
         {view.kind === 'loading' && <p className="muted">{t('app.loading')}</p>}
@@ -96,6 +106,11 @@ export function App({ api, handoffToken }: AppProps) {
       <footer className="footer">
         <h2>{t('about.title')}</h2>
         <p>{t('about.body')}</p>
+        <p className="credits">
+          <a href={AUTHOR_URL} target="_blank" rel="noreferrer noopener">
+            {t('app.author')}
+          </a>
+        </p>
       </footer>
     </div>
   );

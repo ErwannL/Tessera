@@ -29,6 +29,19 @@ export interface AppDeps {
   frontendDir: string | null;
 }
 
+const API_PREFIXES = ['/api/', '/health', '/livez'];
+
+/** API, health and probe routes are never framable. */
+export function isApiPath(url: string): boolean {
+  const { pathname: path } = new URL(url, 'http://tessera.invalid');
+  return API_PREFIXES.some((prefix) => path === prefix || path.startsWith(prefix));
+}
+
+/** Replaces `frame-ancestors 'none'` in a CSP with the listed origins. */
+export function withFrameAncestors(csp: string, origins: readonly string[]): string {
+  return csp.replace(/frame-ancestors [^;]*/, `frame-ancestors ${origins.join(' ')}`);
+}
+
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   const { config, db, clock } = deps;
   const production = config.NODE_ENV === 'production';
@@ -64,6 +77,13 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     },
     hsts: production ? { maxAge: 31_536_000, includeSubDomains: true } : false,
     referrerPolicy: { policy: 'no-referrer' },
+  });
+  // Only the dashboard pages may be framed (by EMBED_ORIGINS); the API keeps 'none'.
+  app.addHook('onSend', async (request, reply) => {
+    if (config.EMBED_ORIGINS.length === 0 || isApiPath(request.url)) return;
+    const csp = String(reply.getHeader('content-security-policy'));
+    reply.header('content-security-policy', withFrameAncestors(csp, config.EMBED_ORIGINS));
+    void reply.removeHeader('x-frame-options');
   });
   await app.register(cookie);
   // In-memory store, per instance (see docs/DECISIONS.md). Limits are applied by limitHook.

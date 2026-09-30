@@ -18,6 +18,32 @@ const trustProxy = z
     return value.split(',');
   });
 
+/**
+ * Origins allowed to frame the dashboard (`frame-ancestors`): space-separated, each a bare
+ * http(s) origin. Empty or absent = nobody (`'none'`). A wildcard, a path or any other
+ * scheme is a configuration error, never silently widened.
+ */
+const embedOrigins = z
+  .string()
+  .default('')
+  .transform((value, ctx): string[] => {
+    const origins: string[] = [];
+    for (const item of value.split(/\s+/).filter((entry) => entry !== '')) {
+      const parsed = URL.canParse(item) ? new URL(item) : null;
+      const valid =
+        parsed !== null &&
+        (parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
+        parsed.origin === item.replace(/\/$/, '') &&
+        !item.includes('*');
+      if (!valid) {
+        ctx.addIssue({ code: 'custom', message: 'not an http(s) origin' });
+        return z.NEVER;
+      }
+      origins.push(parsed.origin);
+    }
+    return [...new Set(origins)];
+  });
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'staging', 'production']),
   PORT: int(3000, 0, 65535),
@@ -31,6 +57,9 @@ const envSchema = z.object({
   HANDOFF_SECRET: secret,
   SESSION_SECRET: secret,
   PUBLIC_URL: z.url({ protocol: /^https?$/ }).transform((value) => new URL(value).origin),
+  /** Where « Back to Orqea » leads (public: exposed to the dashboard). */
+  TESSERA_ORQEA_URL: z.url({ protocol: /^https?$/ }).default('https://orqea.dev'),
+  EMBED_ORIGINS: embedOrigins,
   TRUST_PROXY: trustProxy,
   CODE_LENGTH: int(6, 6, 12),
   DEFAULT_EXPIRES_IN_SECONDS: int(600, 1, 2_592_000),

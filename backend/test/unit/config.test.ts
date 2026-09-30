@@ -42,6 +42,27 @@ describe('loadConfig', () => {
     expect(loadConfig(baseEnv({ TRUST_PROXY: value })).TRUST_PROXY).toEqual(expected);
   });
 
+  it('EMBED_ORIGINS: empty by default, otherwise a list of http(s) origins', () => {
+    expect(loadConfig(baseEnv()).EMBED_ORIGINS).toEqual([]);
+    expect(loadConfig(baseEnv({ EMBED_ORIGINS: '  ' })).EMBED_ORIGINS).toEqual([]);
+    expect(
+      loadConfig(baseEnv({ EMBED_ORIGINS: 'http://localhost:3002 https://a.dev/ https://a.dev' }))
+        .EMBED_ORIGINS,
+    ).toEqual(['http://localhost:3002', 'https://a.dev']);
+    for (const bad of ['*', 'https://*.a.dev', 'ftp://a.dev', 'https://a.dev/path', 'a.dev']) {
+      expect(failure(baseEnv({ EMBED_ORIGINS: `https://ok.dev ${bad}` }))).toContain(
+        'EMBED_ORIGINS',
+      );
+    }
+  });
+
+  it('TESSERA_ORQEA_URL: defaults to Orqea, http(s) only', () => {
+    expect(loadConfig(baseEnv()).TESSERA_ORQEA_URL).toBe('https://orqea.dev');
+    expect(failure(baseEnv({ TESSERA_ORQEA_URL: 'javascript:alert(1)' }))).toContain(
+      'TESSERA_ORQEA_URL',
+    );
+  });
+
   it('keeps only the origin of PUBLIC_URL', () => {
     expect(loadConfig(baseEnv({ PUBLIC_URL: 'https://t.example.com/x/' })).PUBLIC_URL).toBe(
       'https://t.example.com',

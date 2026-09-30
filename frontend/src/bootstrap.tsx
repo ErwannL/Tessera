@@ -22,10 +22,13 @@ export async function mount(env: BrowserEnvironment): Promise<void> {
   env.document.documentElement.lang = language;
   const container = env.document.getElementById('root');
   if (container === null) throw new Error('Missing #root element');
+  // Framed by the Orqea console: « Back to Orqea » makes no sense there.
+  const view = env.document.defaultView;
+  const framed = view !== null && view.self !== view.top;
   const api = createApi((input, init) => env.fetch(input, init));
   createRoot(container).render(
     <I18nextProvider i18n={i18n}>
-      <App api={api} handoffToken={handoffToken} />
+      <App api={api} handoffToken={handoffToken} framed={framed} />
     </I18nextProvider>,
   );
 }

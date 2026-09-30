@@ -64,8 +64,8 @@ export function detailOf(request: RequestView, chainValid = true): Detail {
 export function fakeApi(overrides: Partial<Api> = {}): Api {
   return {
     handoff: vi.fn(() => Promise.resolve(aliceMe)),
-    logout: vi.fn(() => Promise.resolve(null)),
     me: vi.fn(() => Promise.resolve(aliceMe)),
+    config: vi.fn(() => Promise.resolve({ orqeaUrl: 'https://orqea.example/app' })),
     list: vi.fn(() => Promise.resolve(page([makeRequest()]))),
     detail: vi.fn((id: string) => Promise.resolve(detailOf(makeRequest({ id })))),
     ...overrides,

@@ -32,8 +32,24 @@ describe('mount', () => {
     await mount(environment(fetchImpl as unknown as typeof fetch, ['en-US']));
     expect(window.location.hash).toBe('');
     expect(await screen.findByText('No request concerns you')).toBeInTheDocument();
-    expect(seen).toEqual(['/api/v1/dashboard/handoff ', '/api/v1/dashboard/me ']);
+    expect(seen[0]).toBe('/api/v1/dashboard/handoff ');
+    expect(seen).toContain('/api/v1/dashboard/me ');
     expect(document.documentElement.lang).toBe('en');
+  });
+
+  it('tells the app when the page is framed', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const seen: string[] = [];
+    const fetchImpl = vi.fn((input: string) => {
+      seen.push(input);
+      const body = { id: '1', name: 'A', hasRequested: false, hasToApprove: false };
+      return Promise.resolve(new Response(JSON.stringify(body), { status: 200 }));
+    });
+    const top = vi.spyOn(window, 'top', 'get').mockReturnValue(null);
+    await mount(environment(fetchImpl as unknown as typeof fetch, ['fr']));
+    await screen.findByText('Aucune demande ne vous concerne');
+    top.mockRestore();
+    expect(seen).not.toContain('/api/v1/dashboard/config');
   });
 
   it('requires a #root element', async () => {

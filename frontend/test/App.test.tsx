@@ -1,5 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../src/api';
 import { App } from '../src/App';
@@ -13,7 +12,7 @@ describe('App', () => {
     expect(await screen.findByText('Connecté en tant que Alice Martin')).toBeInTheDocument();
     expect(api.handoff).toHaveBeenCalledWith('jwt');
     expect(screen.getByRole('tab', { name: 'Mes demandes' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'TESSERA' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'TESSERA par Orqea' })).toBeInTheDocument();
     expect(screen.getByText(/Demandez-lui sa tessera/)).toBeInTheDocument();
   });
 
@@ -47,16 +46,34 @@ describe('App', () => {
     }
   });
 
-  it('signs out, even when the server call fails', async () => {
-    for (const logout of [() => Promise.resolve(null), () => Promise.reject(new ApiError(500))]) {
-      const api = fakeApi({ logout: vi.fn(logout) });
-      const view = await renderWithI18n(<App api={api} handoffToken={null} />);
-      await userEvent.click(await screen.findByRole('button', { name: 'Se déconnecter' }));
-      await waitFor(() => {
-        expect(screen.getByText('Ouvrez Tessera depuis votre application.')).toBeInTheDocument();
-      });
-      view.unmount();
-    }
+  it('has no sign-out button: a link back to Orqea instead, plus the byline and credits', async () => {
+    const api = fakeApi();
+    await renderWithI18n(<App api={api} handoffToken={null} />);
+    await screen.findByText('Connecté en tant que Alice Martin');
+    expect(screen.queryByRole('button', { name: 'Se déconnecter' })).toBeNull();
+    expect(await screen.findByRole('link', { name: 'Revenir sur Orqea' })).toHaveAttribute(
+      'href',
+      'https://orqea.example/app',
+    );
+    expect(screen.getByRole('heading', { name: 'TESSERA par Orqea' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Développé par Erwann Laplante (nouvel onglet)' }),
+    ).toHaveAttribute('href', 'https://github.com/ErwannL');
+  });
+
+  it('hides « Back to Orqea » inside an iframe, and does not even ask for it', async () => {
+    const api = fakeApi();
+    await renderWithI18n(<App api={api} handoffToken={null} framed />);
+    await screen.findByText('Connecté en tant que Alice Martin');
+    expect(screen.queryByRole('link', { name: 'Revenir sur Orqea' })).toBeNull();
+    expect(api.config).not.toHaveBeenCalled();
+  });
+
+  it('keeps working when the Orqea URL cannot be read', async () => {
+    const api = fakeApi({ config: vi.fn(() => Promise.reject(new ApiError(500))) });
+    await renderWithI18n(<App api={api} handoffToken={null} />);
+    await screen.findByText('Connecté en tant que Alice Martin');
+    expect(screen.queryByRole('link', { name: 'Revenir sur Orqea' })).toBeNull();
   });
 
   it('shows the single message when nothing concerns the user', async () => {

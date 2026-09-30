@@ -29,8 +29,6 @@ describe('api client', () => {
   });
 
   it('handles empty answers and errors', async () => {
-    const fetchImpl = vi.fn(() => ok(null, 204));
-    await expect(createApi(fetchImpl).logout()).resolves.toBeNull();
     const failing = createApi(() => ok({ error: 'UNAUTHORIZED' }, 401));
     await expect(failing.me()).rejects.toEqual(new ApiError(401));
     await expect(failing.me()).rejects.toMatchObject({ status: 401 });

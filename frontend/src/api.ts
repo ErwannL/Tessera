@@ -41,21 +41,20 @@ export function createApi(fetchImpl: Fetch) {
       headers: { accept: 'application/json', ...init.headers },
     });
     if (!response.ok) throw new ApiError(response.status);
-    return (response.status === 204 ? null : await response.json()) as T;
+    return (await response.json()) as T;
   }
 
-  const post = <T>(path: string, body?: unknown) =>
+  const post = <T>(path: string, body: unknown) =>
     call<T>(path, {
       method: 'POST',
-      ...(body === undefined
-        ? {}
-        : { body: JSON.stringify(body), headers: { 'content-type': 'application/json' } }),
+      body: JSON.stringify(body),
+      headers: { 'content-type': 'application/json' },
     });
 
   return {
     handoff: (token: string) => post<Me>('/handoff', { token }),
-    logout: () => post<null>('/logout'),
     me: () => call<Me>('/me'),
+    config: () => call<{ orqeaUrl: string }>('/config'),
     list: (role: Role, filters: Filters, cursor: string | null) =>
       call<Page>(`/requests?${listQuery(role, filters, cursor)}`),
     detail: (id: string) => call<Detail>(`/requests/${encodeURIComponent(id)}`),

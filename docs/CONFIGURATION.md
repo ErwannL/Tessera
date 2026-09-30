@@ -26,6 +26,12 @@ tous les environnements : 32 caractères au moins, et tous différents les uns d
 
 ## Variables optionnelles
 
+- `EMBED_ORIGINS` : origines autorisées à afficher le tableau de bord dans un `<iframe>` (directive
+  `frame-ancestors`), séparées par des espaces, par exemple `https://console.orqea.dev http://localhost:3002`.
+  Vide ou absente : `'none'`. Origines `http(s)` nues seulement (pas de joker, de chemin ni d'autre schéma :
+  démarrage refusé). Ne concerne que les pages du tableau de bord, jamais l'API.
+- `TESSERA_ORQEA_URL` : cible du lien « Revenir sur Orqea » (`https://orqea.dev` par défaut) ; masqué dans un `<iframe>`.
+
 | Variable                        | Défaut    | Bornes           | Rôle                                                         |
 | ------------------------------- | --------- | ---------------- | ------------------------------------------------------------ |
 | `PORT`                          | `3000`    | 0–65535          | port d'écoute                                                |

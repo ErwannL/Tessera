@@ -43,7 +43,7 @@ services:
       migrate: { condition: service_completed_successfully }
 
   demo:
-    image: node:22-slim
+    image: node:22.23.4-slim
     working_dir: /demo
     command: ['node', 'server.ts']
     network_mode: service:tessera

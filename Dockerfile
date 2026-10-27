@@ -1,5 +1,5 @@
 # ---- deps: every workspace dependency, from the lockfile only ----
-FROM node:22-slim AS deps
+FROM node:22.23.4-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY backend/package.json backend/
@@ -18,7 +18,7 @@ FROM dev AS build
 RUN npm run build -w frontend && npm run build -w backend
 
 # ---- prod-deps: backend runtime dependencies only ----
-FROM node:22-slim AS prod-deps
+FROM node:22.23.4-slim AS prod-deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY backend/package.json backend/
@@ -28,7 +28,7 @@ COPY e2e/package.json e2e/
 RUN npm ci --no-audit --no-fund --omit=dev --workspace backend --include-workspace-root=false
 
 # ---- runtime: minimal image, non-root, no secret ----
-FROM node:22-slim AS runtime
+FROM node:22.23.4-slim AS runtime
 WORKDIR /app
 COPY --from=prod-deps --chown=root:root /app/node_modules ./node_modules
 COPY --chown=root:root backend/package.json ./backend/package.json
